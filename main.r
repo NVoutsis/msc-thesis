@@ -53,16 +53,20 @@ my.sp.point = as(GNSS_points, "Spatial")
 ###  SRTM  ###
 srtm = raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/Original_Data/srtm_41_04/srtm_41_04.tif")
 plot(srtm)
+mapview(srtm)
 
 ###  Tandem-X  ###
 tandemx = raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/Original_Data/TDM1_DEM__04_N40E023_DEM.tif")
 plot(tandemx)
+mapview(tandemx)
 
 ###  Perioxi_Meletis  ###
 ##### STEP 3: Subset
 shp = readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/MSc_Thesis", "periohi_meletis")
 # Den diavaze to periohi meletis.shp opote: https://community.rstudio.com/t/error-in-readogr-function-cannot-open-data-source/76202
 plot(shp)
+mapview(shp)
+
 # For validation, plot srtm and tandemx with shp added
 plot(srtm)
 plot(shp,add=T)
@@ -73,18 +77,22 @@ plot(shp,add=T)
 # Cropping the DEMs into the area of interest
 r1 = crop(srtm, shp)
 plot(r1)
+mapview(r1)
 r2 = crop(tandemx,shp)
 plot(r2)
+mapview(r2)
 
 ##### STEP 4: Apply water body mask (GIS--->R?)
 wb = readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/MSc_Thesis","limnes")
 plot(wb)
+mapview(wb)
+
 # For validation, plot srtm(r1) and tandemx(r2) with wb added
 plot(r1)
 plot(wb,add=T)
 plot(r2)
 plot(wb,add=T)
-
+mapview(wb)
 ##### STEP 5: Reclassify
 # Not needed
 
@@ -205,24 +213,30 @@ relative_diffs_br_rd = get_list_point_difference(SRTM_vector_diffs,GNSS_vector_d
 #raster vs raster absolute difference
 rvr_abs_df = get_statistics(absolute_diffs_rasters)
 print(rvr_abs_df)
+View(rvr_abs_df)
 
 # GNSS vs Tandem-X 
 #vector (point) vs raster (tandemx)
 rdvgr_abs_df = get_statistics(absolute_diffs_gr_rd)
+View(rdvgr_abs_df)
 
 # GNSS vs SRTM 
 #vector (point) vs raster (srtm)
 rdvbr_abs_df = get_statistics(absolute_diffs_br_rd)
+View(rdvbr_abs_df)
 
 ## Relative Statistics
 # Tandem-X vs SRTM  
 rvr_rel_df = get_statistics(relative_diffs_rasters)
+View(rvr_rel_df)
 
 # GNSS vs Tandem-X 
 rdvgr_rel_df = get_statistics(relative_diffs_gr_rd)
+View(rdvgr_rel_df)
 
 # GNSS vs SRTM 
 rdvbr_rel_df = get_statistics(relative_diffs_br_rd)
+View(rdvbr_rel_df)
 
 ##### STEP 3: Histograms
 
@@ -248,34 +262,39 @@ extractdata_slope <- raster::extract(x_slope, GNSS_data, weights=FALSE)
 df_slope = data.frame(extractdata_slope)
 df_slope$id = seq.int(nrow(df_slope))
 View(df_slope)
-df_abs_diffs_tandemx = data.frame(absolute_diffs_gr_rd)
+df_abs_diffs_tandemx = abs(data.frame(absolute_diffs_gr_rd))
 df_abs_diffs_tandemx$id = seq.int(nrow(df_abs_diffs_tandemx))
 View(df_abs_diffs_tandemx)
+df_abs_diffs_srtm = abs(data.frame(absolute_diffs_br_rd))
+df_abs_diffs_srtm$id = seq.int(nrow(df_abs_diffs_tandemx))
+View(df_abs_diffs_srtm)
+# Graph Elevation errors-slope: Absolute differences TandemX-GNSS and SRTM-GNSS
+plot(df_slope$extractdata_slope,df_abs_diffs_tandemx$absolute_diffs_gr_rd, type = "l", xlab = "Degrees (°)", ylab = "Elevation Error (m)")
+lines(df_slope$extractdata_slope,df_abs_diffs_srtm$absolute_diffs_br_rd, type = "l", col = "red")
 
-# Graph Elevation errors-slope: absolute differences TandemX-GNSS and SRTM-GNSS
-plot(df_slope,absolute_diffs_gr_rd, type = "l")
-lines(df_slope,absolute_diffs_br_rd, type = "l", col = "red")
-legend("topleft",
+legend("topright",
        legend = c("TandemX", "SRTM"),
        col = c("black", "red"),
        lty = 1)
 
-# Relative difference TandemX-GNSS and SRTM-GNSS
+# Graph Elevation errors-slope: Relative difference TandemX-GNSS and SRTM-GNSS
 relative_diffs_gr_rd = get_list_point_difference(Tandemx_vector_diffs,GNSS_vector_diffs)
 relative_diffs_br_rd = get_list_point_difference(SRTM_vector_diffs,GNSS_vector_diffs)
 create_histogramm(relative_diffs_gr_rd,relative_diffs_br_rd,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Slope Class" , y_title ="Elevation Error")
 
 #####  STEP 5: Correlation with corine
-
-corine = raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/corine_raster/DATA/U2018_CLC2012_V2020_20u1.tif")
 # Corine_df = as.data.frame(corine, xy = TRUE)
+corine <- readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
+#corine <- spTRansform(corine, CRS(proj4string(shp)))
+plot(corine)
 # Reproject clc raster file to the same projection as tandemx/srtm
-corine_reproject <- projectRaster(corine,crs = crs(tandemx))
+corine_reproject <- projectRaster(corine,crs = crs(shp))
 
 # Crop corine to subject area
-corine_crop = crop(corine_reproject, shp)
+corine_crop = crop(corine, shp)
 plot(corine_crop)
 plot(shp,add=T)
-#statistika sunaxiologisi absolute kai relative
+#for absolute kai relative diffs
 
-##### STEP 6
+##### STEP 6: maps for absolute diffs
+elevation_map = overlay(r2,r1,fun=function(r1,r2) {return(r2-r1)})
