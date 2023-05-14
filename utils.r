@@ -35,7 +35,7 @@ get_random_geo_points <- function(sample,list) {
 # params
 # list type list
 # returns all statistical measures in a dataframe
-get_statistiscs <- function(list) {
+get_statistics <- function(list) {
   min = min(list, na.rm=TRUE)
   max = max(list,na.rm=TRUE)
   mean = mean(list,na.rm=TRUE)
