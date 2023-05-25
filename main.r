@@ -284,9 +284,9 @@ create_histogramm(relative_diffs_gr_rd,relative_diffs_br_rd,"Absolute Elevation 
 
 #####  STEP 5: Correlation with corine
 # Corine_df = as.data.frame(corine, xy = TRUE)
-corine <- readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/u2018_clc2018_v2020_20u1_raster100m/DATA/U2018_CLC2018_V2020_20u1.tif")
-#corine <- spTRansform(corine, CRS(proj4string(shp)))
-plot(corine)
+corine <- raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/Corine/DATA/U2018_CLC2018_V2020_20u1.tif")
+corine_transf <- spTRansform(corine, CRS(proj4string(shp)))
+plot(corine_transf)
 # Reproject clc raster file to the same projection as tandemx/srtm
 corine_reproject <- projectRaster(corine,crs = crs(shp))
 
