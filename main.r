@@ -63,8 +63,6 @@ mapview(tandemx)
 ###  Perioxi_Meletis  ###
 ##### STEP 3: Subset
 shp = readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/MSc_Thesis", "periohi_meletis")
-# Den diavaze to periohi meletis.shp opote: https://community.rstudio.com/t/error-in-readogr-function-cannot-open-data-source/76202
-plot(shp)
 mapview(shp)
 
 # For validation, plot srtm and tandemx with shp added
@@ -72,19 +70,15 @@ plot(srtm)
 plot(shp,add=T)
 plot(tandemx)
 plot(shp,add=T)
-#den diavazei to shp otan einai apothikeumeno se egsa87, mono otan wgs84
 
 # Cropping the DEMs into the area of interest
 r1 = crop(srtm, shp)
-plot(r1)
 mapview(r1)
 r2 = crop(tandemx,shp)
-plot(r2)
 mapview(r2)
 
-##### STEP 4: Apply water body mask (GIS--->R?)
+##### STEP 4: Apply water body mask 
 wb = readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/MSc_Thesis","limnes")
-plot(wb)
 mapview(wb)
 
 # For validation, plot srtm(r1) and tandemx(r2) with wb added
@@ -93,6 +87,7 @@ plot(wb,add=T)
 plot(r2)
 plot(wb,add=T)
 mapview(wb)
+
 ##### STEP 5: Reclassify
 # Not needed
 
@@ -103,7 +98,7 @@ GNSS_points2 = read.csv( "/Users/nikosvoutsis/Desktop/MSc_Thesis/GNSS_data_corre
 
 GNSS_points2$LATITUDE = GNSS_points2$LATITUDE %>% gsub(pattern = ",", replacement = ".", fixed=T) %>% as.numeric()
 GNSS_points2$LONGITUDE = GNSS_points2$LONGITUDE %>% gsub(pattern = ",", replacement = ".", fixed=T) %>% as.numeric()
-GNSS_points2$ELEVcorr_a = GNSS_points2$ELEVcorr_a %>% gsub(pattern = ",", replacement = ".", fixed=T) %>% as.numeric()
+GNSS_points2$ELEV_ortho = GNSS_points2$ELEV_ortho %>% gsub(pattern = ",", replacement = ".", fixed=T) %>% as.numeric()
 head(GNSS_points2) 
 my.sf.point = st_as_sf(x = GNSS_points2, 
                         coords = c("LONGITUDE", "LATITUDE"),
@@ -115,6 +110,7 @@ my.sp.point2 = as(my.sf.point, "Spatial")
 # Plotting the extracted data (DEM with GNSS)
 myCol = terrain.colors(7)
 plot(r1, col=myCol, main="SRTM with GNSS points plotted");par(new=TRUE)
+plot(r2, col=myCol, main="TANDEM-X with GNSS points plotted");par(new=TRUE)
 
 # Crop the GNSS points that are outside of the area of interest
 GNSS_data = crop(my.sp.point2,shp)
@@ -130,22 +126,22 @@ View(df)
 df$id = seq.int(nrow(df))
 x1 = df$id
 y1 = df$extractdata
-plot(x1,y1, main="TandemX_DEM", col.main="black", font.main=4, xlab = "GNSS", ylab="Elevation", type="l")
+plot(x1,y1, main="TandemX_DEM", col.main="black", font.main=4, xlab = "GNSS", ylab="Elevation (m)", type="l")
 
 # Plot data, histogram (GNSS, df_gp)
 df_gp = data.frame(GNSS_data)
 View(df_gp)
 df_gp$id = seq.int(nrow(df_gp))
 x2 = df_gp$id
-y2 = df_gp$ELEVcorr_a
-plot(x2, y2, main="Elevation_GNSS", col.main="black", font.main=4, xlab = "GNSS", ylab="Elevation", type="l")
+y2 = df_gp$ELEV_ortho
+plot(x2, y2, main="Elevation_GNSS", col.main="black", font.main=4, xlab = "GNSS", ylab="Elevation (m)", type="l")
 
 # Plot both and compare: TandemX_GNSS
 x1 = df$id
 y1 = df$extractdata
-plot(x1, y1, main="Elevation Comparison: TandemX/GNSS", col.main="black", font.main=4, xlab = "GNSS points", ylab="Elevation", type="l", xlim=c(0,41000), ylim=c(0,1000))
+plot(x1, y1, main="Elevation Comparison: TandemX/GNSS", col.main="black", font.main=4, xlab = "GNSS points", ylab="Elevation (m)", type="l", xlim=c(0,41000), ylim=c(0,1000))
 x2 = df_gp$id
-y2 = df_gp$ELEVcorr_a
+y2 = df_gp$ELEV_ortho
 lines(x2, y2, col="red")
 legend(x=31000, y=900, c("TandemX","GNSS"), cex=.8, col=c("black","red"), lty=c(1,1))
 
@@ -161,19 +157,20 @@ y3 = df1$extractdata1
 plot(x3, y3, main="SRTM_DEM", col.main="black", font.main=4, xlab = "GNSS", ylab="Elevation", type="l", xlim=c(0,39982), ylim=c(0,1000))
 
 # Plot both and compare: SRTM_GNSS
-x2 = df_gp$OBJECTID
-y2 = df_gp$ELEVcorr_a
+plot(x2, y2, main="Elevation Comparison: SRTM/GNSS", col.main="black", font.main=4, xlab = "GNSS points", ylab="Elevation (m)", type="l", xlim=c(0,41000), ylim=c(0,1000))
+x2 = df_gp$id
+y2 = df_gp$ELEV_ortho
 lines(x2, y2, col="red")
-legend(x=31000, y=900, c("SRTM_DEM","GNSS"), cex=.8, col=c("black","red"), lty=c(1,1))
+legend(x=31000, y=900, c("SRTM_DEM","GNSS"), cex=.6, col=c("black","red"), lty=c(1,1))
 
 # Plot both and compare: SRTM_TandemX
 x1 = df$id
 y1 = df$extractdata
-plot(x1, y1, main="Elevation Comparison: TandemX/SRTM", col.main="black", font.main=4, xlab = "GNSS points", ylab="Elevation", type="l", xlim=c(0,39982), ylim=c(0,1000))
+plot(x1, y1, main="Elevation Comparison: TandemX/SRTM", col.main="black", font.main=4, xlab = "GNSS points", ylab="Elevation (m)", type="l", xlim=c(0,39982), ylim=c(0,1000))
 x3 = df1$id
 y3 = df1$extractdata1
 lines(x3, y3, col="red")
-legend(x=31000, y=900, c("TandemX","SRTM"), cex=.8, col=c("black","red"), lty=c(1,1))
+legend(x=31000, y=900, c("TandemX","SRTM"), cex=.7, col=c("black","red"), lty=c(1,1))
 
 ##### STEP 7: resample raster (validating raster)
 r = resample(r1, r2, method="bilinear")
@@ -182,15 +179,16 @@ plot(r)
 ################ MAIN PROCESSING PHASE ################
 tandemx_data = extractdata
 srtm_data = extractdata1
-point_data = GNSS_data$ELEVcorr_a %>% gsub(pattern = ",", replacement = ".", fixed=T) %>% as.numeric()
+point_data = GNSS_data$ELEV_ortho %>% gsub(pattern = ",", replacement = ".", fixed=T) %>% as.numeric()
 
 ##### STEP 1: Absolute and Relative differences
 len = length(point_data)
 
 # Absolute differences
 absolute_diffs_rasters = get_list_point_difference(extractdata,extractdata1) # difference between Tandem-X vs SRTM 
-absolute_diffs_gr_rd = get_list_point_difference(point_data,extractdata) # difference between Tandem-X and GNSS
-absolute_diffs_br_rd = get_list_point_difference(point_data,extractdata1) # difference between SRTM and GNSS
+absolute_diffs_tandx_gnss = get_list_point_difference(point_data,extractdata) # difference between Tandem-X and GNSS
+absolute_diffs_srtm_gnss = get_list_point_difference(point_data,extractdata1) # difference between SRTM and GNSS
+
 # Relative difference
 sample = generate_random_list(100,1,len) # get sample at random
 random_GNSS_points = get_random_geo_points(sample,point_data)
@@ -203,9 +201,9 @@ Tandemx_vector_diffs = get_point_difference(random_Tandemx_points)
 SRTM_vector_diffs = get_point_difference(random_SRTM_points)
 
 # Get relative differences 
-relative_diffs_rasters = get_list_point_difference(Tandemx_vector_diffs,SRTM_vector_diffs) # difference between good and bad raster
-relative_diffs_gr_rd = get_list_point_difference(Tandemx_vector_diffs,GNSS_vector_diffs) # difference between good raster and GNSS
-relative_diffs_br_rd = get_list_point_difference(SRTM_vector_diffs,GNSS_vector_diffs) # difference between bad raster and GNSS
+relative_diffs_rasters = get_list_point_difference(Tandemx_vector_diffs,SRTM_vector_diffs) # difference between Tandem-X vs SRTM 
+relative_diffs_tandx_gnss = get_list_point_difference(Tandemx_vector_diffs,GNSS_vector_diffs) # difference between Tandem-X and GNSS
+relative_diffs_srtm_gnss = get_list_point_difference(SRTM_vector_diffs,GNSS_vector_diffs) # difference between SRTM and GNSS
 
 ##### STEP 2: Statistics 
 ## Absolute Statistics
@@ -215,62 +213,65 @@ rvr_abs_df = get_statistics(absolute_diffs_rasters)
 print(rvr_abs_df)
 View(rvr_abs_df)
 
-# GNSS vs Tandem-X 
+# GNSS vs Tandem-X absolute difference
 #vector (point) vs raster (tandemx)
-rdvgr_abs_df = get_statistics(absolute_diffs_gr_rd)
-View(rdvgr_abs_df)
+gnssvtandx_abs_df = get_statistics(absolute_diffs_tandx_gnss)
+View(gnssvtandx_abs_df)
 
-# GNSS vs SRTM 
+# GNSS vs SRTM absolute difference
 #vector (point) vs raster (srtm)
-rdvbr_abs_df = get_statistics(absolute_diffs_br_rd)
-View(rdvbr_abs_df)
+gnssvsrtm_abs_df = get_statistics(absolute_diffs_srtm_gnss)
+View(gnssvsrtm_abs_df)
 
 ## Relative Statistics
-# Tandem-X vs SRTM  
+# Tandem-X vs SRTM relative difference
 rvr_rel_df = get_statistics(relative_diffs_rasters)
 View(rvr_rel_df)
 
-# GNSS vs Tandem-X 
-rdvgr_rel_df = get_statistics(relative_diffs_gr_rd)
-View(rdvgr_rel_df)
+# GNSS vs Tandem-X relative difference
+tandxvgnss_rel_df = get_statistics(relative_diffs_tandx_gnss)
+View(tandxvgnss_rel_df)
 
-# GNSS vs SRTM 
-rdvbr_rel_df = get_statistics(relative_diffs_br_rd)
-View(rdvbr_rel_df)
+# GNSS vs SRTM relative difference
+gnssvsrtm_rel_df = get_statistics(relative_diffs_srtm_gnss)
+View(gnssvsrtm_rel_df)
 
 ##### STEP 3: Histograms
 
 # Absolute diffs
-create_histogramm(absolute_diffs_rasters,"Absolute Elevation Error Comparison: TandemX/SRTM", x_title= "Elevation Error" , y_title ="Frequency")
-create_histogramm(absolute_diffs_gr_rd,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Elevation Error" , y_title ="Frequency")
-create_histogramm(absolute_diffs_br_rd,"Absolute Elevation Error Comparison: SRTM/GNSS", x_title= "Elevation Error" , y_title ="Frequency")
+create_histogramm(absolute_diffs_rasters,"Absolute Elevation Error Comparison: TandemX/SRTM", x_title= "Elevation Error (m)" , y_title ="Frequency")
+create_histogramm(absolute_diffs_tandx_gnss,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Elevation Error (m)" , y_title ="Frequency")
+create_histogramm(absolute_diffs_srtm_gnss,"Absolute Elevation Error Comparison: SRTM/GNSS", x_title= "Elevation Error (m)" , y_title ="Frequency")
 
 # Relative diffs
-create_histogramm(relative_diffs_rasters,"Relative Elevation Error Comparison: TandemX/SRTM", x_title= "Elevation Error" , y_title ="Frequency")
-create_histogramm(relative_diffs_gr_rd,"Relative Elevation Error Comparison: TandemX/GNSS", x_title= "Elevation Error" , y_title ="Frequency")
-create_histogramm(relative_diffs_br_rd,"Relative Elevation Error Comparison: SRTM/GNSS", x_title= "Elevation Error" , y_title ="Frequency")
+create_histogramm(relative_diffs_rasters,"Relative Elevation Error Comparison: TandemX/SRTM", x_title= "Elevation Error (m)" , y_title ="Frequency")
+create_histogramm(relative_diffs_tandx_gnss,"Relative Elevation Error Comparison: TandemX/GNSS", x_title= "Elevation Error (m)" , y_title ="Frequency")
+create_histogramm(relative_diffs_srtm_gnss,"Relative Elevation Error Comparison: SRTM/GNSS", x_title= "Elevation Error (m)" , y_title ="Frequency")
 
 # !Cumulative Frequencies histograms! #
+#create_cummulutive_linechart
 
 ##### STEP 4: Correlation with slope
 # Slope calculated from the most accurate and higher spatial resolution available dataset (TandemX)
 x_slope = terrain(r2, v = "slope", unit = 'degrees')
-plot(x_slope)
+plot(x_slope, main = "Slope calculated from TANDEM-X DEM")
 
 # Data extraction from slope DEM and data
 extractdata_slope <- raster::extract(x_slope, GNSS_data, weights=FALSE)
 df_slope = data.frame(extractdata_slope)
 df_slope$id = seq.int(nrow(df_slope))
 View(df_slope)
-df_abs_diffs_tandemx = abs(data.frame(absolute_diffs_gr_rd))
+df_abs_diffs_tandemx = abs(data.frame(absolute_diffs_tandx_gnss))
 df_abs_diffs_tandemx$id = seq.int(nrow(df_abs_diffs_tandemx))
 View(df_abs_diffs_tandemx)
-df_abs_diffs_srtm = abs(data.frame(absolute_diffs_br_rd))
+df_abs_diffs_srtm = abs(data.frame(absolute_diffs_srtm_gnss))
 df_abs_diffs_srtm$id = seq.int(nrow(df_abs_diffs_tandemx))
 View(df_abs_diffs_srtm)
+
 # Graph Elevation errors-slope: Absolute differences TandemX-GNSS and SRTM-GNSS
-plot(df_slope$extractdata_slope,df_abs_diffs_tandemx$absolute_diffs_gr_rd, type = "l", xlab = "Degrees (°)", ylab = "Elevation Error (m)")
-lines(df_slope$extractdata_slope,df_abs_diffs_srtm$absolute_diffs_br_rd, type = "l", col = "red")
+plot(df_slope$extractdata_slope,df_abs_diffs_tandemx$absolute_diffs_tandx_gnss, type = "l", xlab = "Degrees (°)", ylab = "Elevation Error (m)",  
+     main = "Absolute elevation errors of DEMS vs Slope variations")
+lines(df_slope$extractdata_slope,df_abs_diffs_srtm$absolute_diffs_srtm_gnss, type = "l", col = "red")
 
 legend("topright",
        legend = c("TandemX", "SRTM"),
@@ -280,22 +281,27 @@ legend("topright",
 # Graph Elevation errors-slope: Relative difference TandemX-GNSS and SRTM-GNSS
 relative_diffs_gr_rd = get_list_point_difference(Tandemx_vector_diffs,GNSS_vector_diffs)
 relative_diffs_br_rd = get_list_point_difference(SRTM_vector_diffs,GNSS_vector_diffs)
-create_histogramm(relative_diffs_gr_rd,relative_diffs_br_rd,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Slope Class" , y_title ="Elevation Error")
+#create_histogramm(relative_diffs_gr_rd,relative_diffs_br_rd,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Slope Class" , y_title ="Elevation Error")
 
 #####  STEP 5: Correlation with corine
-# Corine_df = as.data.frame(corine, xy = TRUE)
 corine <- raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/Corine/DATA/U2018_CLC2018_V2020_20u1.tif")
-corine_transf <- spTRansform(corine, CRS(proj4string(shp)))
+corine <- sp::spTransform(corine, sp::CRS("+proj=longlat +datum=WGS84 +no_defs "))
 corine_transf
 plot(corine_transf)
+
 # Reproject clc raster file to the same projection as tandemx/srtm
-corine_reproject <- projectRaster(corine,crs = crs(shp))
+corine_reproject <- projectRaster(corine_transf,crs = crs(shp))
 
 # Crop corine to subject area
-corine_crop = crop(corine, shp)
+corine_crop = crop(corine_transf, shp)
 plot(corine_crop)
 plot(shp,add=T)
 #for absolute kai relative diffs
 
-##### STEP 6: maps for absolute diffs
-elevation_map = overlay(r2,r1,fun=function(r1,r2) {return(r2-r1)})
+##### STEP 6: maps for absolute diffs between DEMs
+#error for different extends of r1 and r2, so we need to fix this
+new_raster <- crop(r1,r2)
+plot(new_raster)
+elev_diff_map <- overlay(new_raster, r1, fun=function(new_raster,r1) {return(new_raster-r1)})
+plot(elev_diff_map, main = "Absolute elevation difference map - SRTM vs TANDEM-X")
+#otherwise, gis raster calculator dem-dem
