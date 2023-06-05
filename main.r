@@ -284,19 +284,35 @@ relative_diffs_br_rd = get_list_point_difference(SRTM_vector_diffs,GNSS_vector_d
 #create_histogramm(relative_diffs_gr_rd,relative_diffs_br_rd,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Slope Class" , y_title ="Elevation Error")
 
 #####  STEP 5: Correlation with corine
-corine <- raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/Corine/DATA/U2018_CLC2018_V2020_20u1.tif")
-corine <- sp::spTransform(corine, sp::CRS("+proj=longlat +datum=WGS84 +no_defs "))
-corine_transf
-plot(corine_transf)
+# Import corine and show crs
+corine <- raster("/Users/nikosvoutsis/Downloads/u2006_clc2000_v2020_20u1_raster100m/DATA/U2006_CLC2000_V2020_20u1.tif")
+plot(corine)
+crs(corine)
 
-# Reproject clc raster file to the same projection as tandemx/srtm
-corine_reproject <- projectRaster(corine_transf,crs = crs(shp))
+# Reproject shp in order to be in the same crs with corine
+shp_reproject <- spTransform(shp,crs(corine))
+crs(shp_reproject)
+plot(shp_reproject,add=T)
 
-# Crop corine to subject area
-corine_crop = crop(corine_transf, shp)
+# Crop corine in subject area
+corine_crop <- crop(corine,shp_reproject)
 plot(corine_crop)
-plot(shp,add=T)
-#for absolute kai relative diffs
+
+# Reproject GNSS data and plot as overlays
+GNSS_data_reproject <-spTransform(GNSS_data,crs(corine))
+plot(GNSS_data_reproject,add=T)
+
+# Read clc classes and rename the levels of the raster file with this classes
+clc_classes <- foreign::read.dbf("/Users/nikosvoutsis/Downloads/u2006_clc2000_v2020_20u1_raster100m/DATA/U2006_CLC2000_V2020_20u1.tif.vat.dbf",
+                                 as.is = TRUE) %>%dplyr::select(value = Value,landcov = LABEL3)
+clc_classes
+
+# Extract data from corine_crop using GNSS data and create dataframe
+extractdata_corine <- extract(corine_crop$LABEL3, GNSS_data_reproject, weights=FALSE) # monodiastatos
+View(extractdata_corine)
+df_extractdata_corine = data.frame(extractdata_corine)
+df_extractdata_corine$id = seq.int(nrow(df_extractdata_corine))
+View(df_extractdata_corine)
 
 ##### STEP 6: maps for absolute diffs between DEMs
 #error for different extends of r1 and r2, so we need to fix this
