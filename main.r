@@ -64,6 +64,7 @@ mapview(tandemx)
 ##### STEP 3: Subset
 shp = readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/MSc_Thesis", "periohi_meletis")
 mapview(shp)
+crs(shp)
 
 # For validation, plot srtm and tandemx with shp added
 plot(srtm)
@@ -237,7 +238,6 @@ gnssvsrtm_rel_df = get_statistics(relative_diffs_srtm_gnss)
 View(gnssvsrtm_rel_df)
 
 ##### STEP 3: Histograms
-
 # Absolute diffs
 create_histogramm(absolute_diffs_rasters,"Absolute Elevation Error Comparison: TandemX/SRTM", x_title= "Elevation Error (m)" , y_title ="Frequency")
 create_histogramm(absolute_diffs_tandx_gnss,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Elevation Error (m)" , y_title ="Frequency")
@@ -248,40 +248,66 @@ create_histogramm(relative_diffs_rasters,"Relative Elevation Error Comparison: T
 create_histogramm(relative_diffs_tandx_gnss,"Relative Elevation Error Comparison: TandemX/GNSS", x_title= "Elevation Error (m)" , y_title ="Frequency")
 create_histogramm(relative_diffs_srtm_gnss,"Relative Elevation Error Comparison: SRTM/GNSS", x_title= "Elevation Error (m)" , y_title ="Frequency")
 
-# !Cumulative Frequencies histograms! #
-#create_cummulutive_linechart
-
 ##### STEP 4: Correlation with slope
 # Slope calculated from the most accurate and higher spatial resolution available dataset (TandemX)
 x_slope = terrain(r2, v = "slope", unit = 'degrees')
 plot(x_slope, main = "Slope calculated from TANDEM-X DEM")
 
-# Data extraction from slope DEM and data
+# Data extraction from slope DEM and sorted data for better plot
 extractdata_slope <- raster::extract(x_slope, GNSS_data, weights=FALSE)
-df_slope = data.frame(extractdata_slope)
+# Slope sorted data
+gnss_abs_sorted = getSortAbsoluteList(extractdata_slope)
+df_slope = data.frame(gnss_abs_sorted)
 df_slope$id = seq.int(nrow(df_slope))
 View(df_slope)
-df_abs_diffs_tandemx = abs(data.frame(absolute_diffs_tandx_gnss))
+# Tandemx Absolute sorted data
+tandemx_abs_sorted = getSortAbsoluteList(absolute_diffs_tandx_gnss)
+df_abs_diffs_tandemx = data.frame(tandemx_abs_sorted)
 df_abs_diffs_tandemx$id = seq.int(nrow(df_abs_diffs_tandemx))
 View(df_abs_diffs_tandemx)
-df_abs_diffs_srtm = abs(data.frame(absolute_diffs_srtm_gnss))
-df_abs_diffs_srtm$id = seq.int(nrow(df_abs_diffs_tandemx))
+# SRTM Absolute sorted data
+srtm_abs_sorted = getSortAbsoluteList(absolute_diffs_srtm_gnss)
+df_abs_diffs_srtm = data.frame(srtm_abs_sorted)
+df_abs_diffs_srtm$id = seq.int(nrow(df_abs_diffs_srtm))
 View(df_abs_diffs_srtm)
 
+# Slope Relative (Random 4950) data
+sample = generate_random_list(4950,1,len) # get sample at random
+random_slope = get_random_geo_points(sample,gnss_abs_sorted)
+gnss_rel_sorted = getSortAbsoluteList(random_slope)
+df_random_slope = data.frame(gnss_rel_sorted)
+df_random_slope$id = seq.int(nrow(df_random_slope))
+View(df_random_slope)
+# Tandemx Relative sorted data
+tandemx_rel_sorted = getSortAbsoluteList(relative_diffs_tandx_gnss)
+df_rel_diffs_tandemx = data.frame(tandemx_rel_sorted)
+df_rel_diffs_tandemx$id = seq.int(nrow(df_rel_diffs_tandemx))
+View(df_rel_diffs_tandemx)
+# SRTM Relative sorted data
+srtm_rel_sorted = getSortAbsoluteList(relative_diffs_srtm_gnss)
+df_rel_diffs_srtm = data.frame(srtm_rel_sorted)
+df_rel_diffs_srtm$id = seq.int(nrow(df_rel_diffs_srtm))
+View(df_rel_diffs_srtm)
+
 # Graph Elevation errors-slope: Absolute differences TandemX-GNSS and SRTM-GNSS
-plot(df_slope$extractdata_slope,df_abs_diffs_tandemx$absolute_diffs_tandx_gnss, type = "l", xlab = "Degrees (°)", ylab = "Elevation Error (m)",  
+plot(df_slope$gnss_abs_sorted,df_abs_diffs_tandemx$tandemx_abs_sorted, type = "l", xlab = "Degrees (°)", ylab = "Elevation Error (m)",  
      main = "Absolute elevation errors of DEMS vs Slope variations")
-lines(df_slope$extractdata_slope,df_abs_diffs_srtm$absolute_diffs_srtm_gnss, type = "l", col = "red")
+lines(df_slope$gnss_abs_sorted,df_abs_diffs_srtm$srtm_abs_sorted, type = "l", col = "red")
 
 legend("topright",
        legend = c("TandemX", "SRTM"),
        col = c("black", "red"),
        lty = 1)
 
-# Graph Elevation errors-slope: Relative difference TandemX-GNSS and SRTM-GNSS
-relative_diffs_gr_rd = get_list_point_difference(Tandemx_vector_diffs,GNSS_vector_diffs)
-relative_diffs_br_rd = get_list_point_difference(SRTM_vector_diffs,GNSS_vector_diffs)
-#create_histogramm(relative_diffs_gr_rd,relative_diffs_br_rd,"Absolute Elevation Error Comparison: TandemX/GNSS", x_title= "Slope Class" , y_title ="Elevation Error")
+# Graph Elevation errors-slope: Relative differences TandemX-GNSS and SRTM-GNSS
+plot(df_random_slope$gnss_rel_sorted,df_rel_diffs_tandemx$tandemx_rel_sorted, type = "l", xlab = "Degrees (°)", ylab = "Elevation Error (m)",  
+     main = "Relative elevation errors of DEMS vs Slope variations")
+lines(df_random_slope$gnss_rel_sorted,df_rel_diffs_srtm$srtm_rel_sorted, type = "l", col = "red")
+
+legend("topright",
+       legend = c("TandemX", "SRTM"),
+       col = c("black", "red"),
+       lty = 1)
 
 #####  STEP 5: Correlation with corine
 # Import corine and show crs
@@ -305,7 +331,7 @@ plot(GNSS_data_reproject,add=T)
 # Read clc classes and rename the levels of the raster file with this classes
 clc_classes <- foreign::read.dbf("/Users/nikosvoutsis/Downloads/u2006_clc2000_v2020_20u1_raster100m/DATA/U2006_CLC2000_V2020_20u1.tif.vat.dbf",
                                  as.is = TRUE) %>%dplyr::select(value = Value,landcov = LABEL3)
-clc_classes
+print(clc_classes$landcov)
 
 # Extract data from corine_crop using GNSS data and create dataframe
 extractdata_corine <- extract(corine_crop$LABEL3, GNSS_data_reproject, weights=FALSE) # monodiastatos
@@ -314,10 +340,50 @@ df_extractdata_corine = data.frame(extractdata_corine)
 df_extractdata_corine$id = seq.int(nrow(df_extractdata_corine))
 View(df_extractdata_corine)
 
+# Sort all corine values 
+extractdata_corine_sorted <- df_extractdata_corine[order(df_extractdata_corine$extractdata_corine),]
+View(extractdata_corine_sorted)
+
+# Unique values and count per land cover type
+unique_values <- sort(unique(df_extractdata_corine$extractdata_corine))
+sum(df_extractdata_corine$extractdata_corine == "") 
+
+# Sort relative corine values
+sample_corine = generate_random_list(4950,1,len) # get sample at random
+random_corine = get_random_geo_points(sample_corine,extractdata_corine_sorted$extractdata_corine)
+View(random_corine)
+corine_rel_sorted = getSortAbsoluteList(random_corine)
+df_random_corine = data.frame(corine_rel_sorted)
+df_random_corine$id = seq.int(nrow(df_random_corine))
+View(df_random_corine)
+
+# Graph Elevation errors-land covers: Absolute differences TandemX-GNSS and SRTM-GNSS
+plot(extractdata_corine_sorted$extractdata_corine,df_abs_diffs_tandemx$tandemx_abs_sorted, type = "p", xlab = "Land covers", ylab = "Elevation Error (m)",  
+     main = "Absolute elevation errors of DEMs vs Corine land cover")
+lines(extractdata_corine_sorted$extractdata_corine,df_abs_diffs_srtm$srtm_abs_sorted, type = "p", col = "red")
+
+legend("topleft",
+       legend = c("TandemX", "SRTM"),
+       col = c("black", "red"),
+       pch = 1)
+
+# Graph Elevation errors-land covers: Relative differences TandemX-GNSS and SRTM-GNSS
+plot(df_random_corine$corine_rel_sorted,df_rel_diffs_tandemx$tandemx_rel_sorted, type = "p", xlab = "Land covers", ylab = "Elevation Error (m)",  
+     main = "Relative elevation errors of DEMs vs Corine land cover")
+lines(df_random_corine$corine_rel_sorted,df_rel_diffs_srtm$srtm_rel_sorted, type = "p", col = "red")
+
+legend("topleft",
+       legend = c("TandemX", "SRTM"),
+       col = c("black", "red"),
+       pch = 1)
+
 ##### STEP 6: maps for absolute diffs between DEMs
-#error for different extends of r1 and r2, so we need to fix this
-new_raster <- crop(r1,r2)
-plot(new_raster)
-elev_diff_map <- overlay(new_raster, r1, fun=function(new_raster,r1) {return(new_raster-r1)})
+# Error for different extends of r1 and r2, so we need to fix this. Setting the same extent
+r2_ext <- crop(r1,r2)
+plot(r2_ext)
+plot(r1)
+
+# DEM Substraction 
+elev_diff_map <- overlay(r2_ext, r1, fun=function(r1,r2) {return(r1-r2)})
+# Bad plot
 plot(elev_diff_map, main = "Absolute elevation difference map - SRTM vs TANDEM-X")
-#otherwise, gis raster calculator dem-dem
