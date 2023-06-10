@@ -4,6 +4,7 @@ library(moments)
 # params
 # list1 type list
 # list2 type list 
+# lists are chosen to simplify the work, simpliest data type
 get_list_point_difference <- function(list1, list2) {
   len = length(list1)
   new_list = c()
@@ -16,6 +17,7 @@ get_list_point_difference <- function(list1, list2) {
 # length type int
 # min type int 
 # max type int 
+#rnd: generate random list and then returns as sorted, data are converted to integer
 generate_random_list <- function(length,min, max) {
   rnd = floor(runif(length,min=min, max=max))
   return(sort(rnd))
@@ -53,6 +55,7 @@ get_statistics <- function(list) {
 # title type string
 # x_title type string
 # y_title type string
+# print missing for na values
 create_histogramm <- function(l,title="Title",x_title="X axis", y_title="y axis") {
   values = c()
   len = length(l)
@@ -91,4 +94,18 @@ get_point_difference <- function(array) {
     }
   }
   return(new_list)
+}
+
+# Convert list values to |absolute| and get the list sorted
+# parameter someList is of type list
+getSortAbsoluteList <- function(someList) {
+  new_list = c()
+  len = length(someList) #extract list length
+  # convert values to |absolute| values
+  for(i in 1:len) {
+    new_list <- append(new_list,abs(someList[[i]]))
+  }
+  # get sorted list
+  sorted = new_list[order(unlist(new_list),decreasing = FALSE)]
+  return(sorted)
 }
