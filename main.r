@@ -79,15 +79,16 @@ r2 = crop(tandemx,shp)
 mapview(r2)
 
 ##### STEP 4: Apply water body mask 
-wb = readOGR("/Users/nikosvoutsis/Desktop/MSc_Thesis/MSc_Thesis","limnes")
-mapview(wb)
+r1_wb = raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/srtm_per_mel_water_bodies.tif")
+mapview(r1_wb)
+r2_wb = raster("/Users/nikosvoutsis/Desktop/MSc_Thesis/tdmx_per_mel_water_bodies.tif")
+mapview(r2_wb)
 
 # For validation, plot srtm(r1) and tandemx(r2) with wb added
-plot(r1)
+plot(r1_wb)
 plot(wb,add=T)
-plot(r2)
+plot(r2_wb)
 plot(wb,add=T)
-mapview(wb)
 
 ##### STEP 5: Reclassify
 # Not needed
@@ -110,8 +111,8 @@ my.sp.point2 = as(my.sf.point, "Spatial")
 
 # Plotting the extracted data (DEM with GNSS)
 myCol = terrain.colors(7)
-plot(r1, col=myCol, main="SRTM with GNSS points plotted");par(new=TRUE)
-plot(r2, col=myCol, main="TANDEM-X with GNSS points plotted");par(new=TRUE)
+plot(r1_wb, col=myCol, main="SRTM with GNSS points plotted");par(new=TRUE)
+plot(r2_wb, col=myCol, main="TANDEM-X with GNSS points plotted");par(new=TRUE)
 
 # Crop the GNSS points that are outside of the area of interest
 GNSS_data = crop(my.sp.point2,shp)
@@ -119,7 +120,7 @@ plot(GNSS_data, add = T)
 head(GNSS_data)
 
 # Data extraction (TandemX_DEM), using the location of the GNSS points as overlays -> extraction of the same location pixel values 
-extractdata <- raster::extract(r2, GNSS_data, weights=FALSE) # monodiastatos
+extractdata <- raster::extract(r2_wb, GNSS_data, weights=FALSE) # monodiastatos
 
 # Plot data, histogram (TandemX_DEM, df)
 df = data.frame(extractdata)
@@ -147,7 +148,7 @@ lines(x2, y2, col="red")
 legend(x=31000, y=900, c("TandemX","GNSS"), cex=.8, col=c("black","red"), lty=c(1,1))
 
 # Data extraction (SRTM_DEM), using the location of the GNSS points as overlays -> extraction of the same location pixel values 
-extractdata1 = raster::extract(r1, GNSS_data, weights=FALSE)
+extractdata1 = raster::extract(r1_wb, GNSS_data, weights=FALSE)
 
 # Plot data, histogram (SRTM_DEM, df1) 
 df1 = data.frame(extractdata1)
@@ -174,7 +175,7 @@ lines(x3, y3, col="red")
 legend(x=31000, y=900, c("TandemX","SRTM"), cex=.7, col=c("black","red"), lty=c(1,1))
 
 ##### STEP 7: resample raster (validating raster)
-r = resample(r1, r2, method="bilinear")
+r = resample(r1_wb, r2_wb, method="bilinear")
 plot(r)
 
 ################ MAIN PROCESSING PHASE ################
@@ -250,7 +251,7 @@ create_histogramm(relative_diffs_srtm_gnss,"Relative Elevation Error Comparison:
 
 ##### STEP 4: Correlation with slope
 # Slope calculated from the most accurate and higher spatial resolution available dataset (TandemX)
-x_slope = terrain(r2, v = "slope", unit = 'degrees')
+x_slope = terrain(r2_wb, v = "slope", unit = 'degrees')
 plot(x_slope, main = "Slope calculated from TANDEM-X DEM")
 
 # Data extraction from slope DEM and sorted data for better plot
@@ -379,11 +380,12 @@ legend("topleft",
 
 ##### STEP 6: maps for absolute diffs between DEMs
 # Error for different extends of r1 and r2, so we need to fix this. Setting the same extent
-r2_ext <- crop(r1,r2)
+r2_ext <- crop(r1_wb,r2_wb)
 plot(r2_ext)
-plot(r1)
+plot(r1_wb)
 
 # DEM Substraction 
-elev_diff_map <- overlay(r2_ext, r1, fun=function(r1,r2) {return(r1-r2)})
-# Bad plot
+elev_diff_map <- overlay(r2_ext, r1_wb, fun=function(r2,r1) {return(r2-r1)})
+
+# DEM Substraction plot
 plot(elev_diff_map, main = "Absolute elevation difference map - SRTM vs TANDEM-X")
